@@ -11,6 +11,8 @@ interface Project {
 
 function App() {
   const [activeCategory, setActiveCategory] = useState('all')
+  const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [formMessage, setFormMessage] = useState('')
 
   const projects: Project[] = [
     {
@@ -62,6 +64,39 @@ function App() {
   const filteredProjects = activeCategory === 'all' 
     ? projects 
     : projects.filter(p => p.category === activeCategory)
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setFormStatus('loading')
+    
+    const formData = new FormData(e.currentTarget)
+    
+    try {
+      const response = await fetch('https://formspree.io/f/xyzpqrst', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        setFormStatus('success')
+        setFormMessage('Thank you! Your message has been sent successfully.')
+        ;(e.target as HTMLFormElement).reset()
+        setTimeout(() => {
+          setFormStatus('idle')
+          setFormMessage('')
+        }, 5000)
+      } else {
+        setFormStatus('error')
+        setFormMessage('Something went wrong. Please try again.')
+      }
+    } catch (error) {
+      setFormStatus('error')
+      setFormMessage('Error sending message. Please try again.')
+    }
+  }
 
   return (
     <div className="portfolio">
@@ -182,11 +217,43 @@ function App() {
               </div>
             </div>
             <div className="contact-form">
-              <form>
-                <input type="text" placeholder="Your Name" required />
-                <input type="email" placeholder="Your Email" required />
-                <textarea placeholder="Your Message" rows={5} required></textarea>
-                <button type="submit" className="submit-btn">Send Message</button>
+              <form onSubmit={handleSubmit}>
+                <input 
+                  type="text" 
+                  name="name"
+                  placeholder="Your Name" 
+                  required 
+                />
+                <input 
+                  type="email" 
+                  name="email"
+                  placeholder="Your Email" 
+                  required 
+                />
+                <textarea 
+                  name="message"
+                  placeholder="Your Message" 
+                  rows={5} 
+                  required
+                ></textarea>
+                <button 
+                  type="submit" 
+                  className="submit-btn"
+                  disabled={formStatus === 'loading'}
+                >
+                  {formStatus === 'loading' ? 'Sending...' : 'Send Message'}
+                </button>
+                
+                {formStatus === 'success' && (
+                  <div className="form-message success">
+                    ✓ {formMessage}
+                  </div>
+                )}
+                {formStatus === 'error' && (
+                  <div className="form-message error">
+                    ✗ {formMessage}
+                  </div>
+                )}
               </form>
             </div>
           </div>
